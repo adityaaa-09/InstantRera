@@ -276,7 +276,7 @@ def update_authorization_letter(promoter_name, project_name, date):
 
     date = datetime.strptime(date, "%Y-%m-%d").strftime("%d-%m-%Y")
 
-    template_path = os.path.join('resources', 'Authorization Letter.docx')
+    template_path = os.path.join('resources', 'AUTHORIZATION LETTER.docx')
     output_folder = os.path.join('generated', 'Authorization')
     os.makedirs(output_folder, exist_ok=True)
 
