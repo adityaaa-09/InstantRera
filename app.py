@@ -727,7 +727,7 @@ def update_FormatD_File(promoter_name, project_name, project_address, planning_a
 
     date = datetime.strptime(date, "%Y-%m-%d").strftime("%d-%m-%Y")
 
-    template_path = os.path.join('resources', 'Format D.docx')
+    template_path = os.path.join('resources', 'FORMAT D.docx')
     output_folder = os.path.join('generated', 'Format_D')
     os.makedirs(output_folder, exist_ok=True)
 
