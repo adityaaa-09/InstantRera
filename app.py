@@ -7,98 +7,127 @@ import tempfile
 app = Flask(__name__)
 
 def update_word_file(promoter_name, project_name, registration_no):
+    from docx import Document
+    import os
+    from datetime import datetime
+
     template_path = os.path.join('resources', 'complaintDeclaration.docx')
-    output_folder = os.path.join('generated', 'complaint')
+    output_folder = os.path.join('generated', 'complaintDeclaration')
     os.makedirs(output_folder, exist_ok=True)
+
     doc = Document(template_path)
 
-    def replace_placeholder_with_bold(para, placeholder, value):
-        if placeholder in para.text:
-            new_runs = []
-            for run in para.runs:
-                if placeholder in run.text:
-                    before, after = run.text.split(placeholder)
-                    if before:
-                        new_runs.append((before, run.bold))
-                    new_runs.append((value, True))
-                    if after:
-                        new_runs.append((after, run.bold))
-                else:
-                    new_runs.append((run.text, run.bold))
+    # Map of placeholders to replacement values
+    replacements = {
+        '{{promoter_name}}': promoter_name,
+        '{{project_name}}': project_name,
+        '{{registration_no}}': registration_no
+    }
+
+    # Helper function to replace with bold for values only
+    def replace_text_with_bold(paragraphs, replacements):
+        for para in paragraphs:
+            full_text = ''.join(run.text for run in para.runs)
+            if not any(ph in full_text for ph in replacements.keys()):
+                continue
+
+            new_runs = [(full_text, False)]
+
+            for placeholder, value in replacements.items():
+                updated_runs = []
+                for text, bold in new_runs:
+                    if placeholder in text:
+                        parts = text.split(placeholder)
+                        for i, part in enumerate(parts):
+                            updated_runs.append((part, bold))
+                            if i < len(parts) - 1:
+                                updated_runs.append((value, True))  # replacement in bold
+                    else:
+                        updated_runs.append((text, bold))
+                new_runs = updated_runs
 
             para.clear()
             for text, bold in new_runs:
-                r = para.add_run(text)
-                r.bold = bold
+                run = para.add_run(text)
+                run.bold = bold
 
-    for para in doc.paragraphs:
-        replace_placeholder_with_bold(para, '{{promoter_name}}', promoter_name)
-        replace_placeholder_with_bold(para, '{{project_name}}', project_name)
-        replace_placeholder_with_bold(para, '{{registration_no}}', registration_no)
+    # Replace in all paragraphs
+    replace_text_with_bold(doc.paragraphs, replacements)
 
+    # Replace in all table cells too
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
-                for para in cell.paragraphs:
-                    replace_placeholder_with_bold(para, '{{promoter_name}}', promoter_name)
-                    replace_placeholder_with_bold(para, '{{project_name}}', project_name)
-                    replace_placeholder_with_bold(para, '{{registration_no}}', registration_no)
+                replace_text_with_bold(cell.paragraphs, replacements)
 
-    # Save file as "{{promoter_name}}_ComplaintDeclaration.docx"
     sanitized_name = promoter_name.replace(" ", "_")
-    filename = f"{sanitized_name}_ComplaintDeclaration.docx"
+    filename = f"{sanitized_name}complaintDeclaration.docx"
     output_path = os.path.join(output_folder, filename)
-
     doc.save(output_path)
+
     return output_path
 
 def generate_no_complaint_file(promoter_name, project_name, registration_no, date):
-    template_path = os.path.join('resources','noComplaintsDeclaration.docx')
-    output_folder = os.path.join('generated','no_complaint')
+    from docx import Document
+    import os
+    from datetime import datetime
+
+    template_path = os.path.join('resources', 'noComplaintsDeclaration.docx')
+    output_folder = os.path.join('generated', 'noComplaintsDeclaration')
     os.makedirs(output_folder, exist_ok=True)
 
     doc = Document(template_path)
-
-    # Format date to dd-mm-yyyy
     date = datetime.strptime(date, "%Y-%m-%d").strftime("%d-%m-%Y")
 
-    def replace_placeholder_with_bold(para, placeholder, value):
-        if placeholder in para.text:
-            new_runs = []
-            for run in para.runs:
-                if placeholder in run.text:
-                    before, after = run.text.split(placeholder)
-                    if before:
-                        new_runs.append((before, run.bold))
-                    new_runs.append((value, True))
-                    if after:
-                        new_runs.append((after, run.bold))
-                else:
-                    new_runs.append((run.text, run.bold))
+    # Map of placeholders to replacement values
+    replacements = {
+        '{{promoter_name}}': promoter_name,
+        '{{project_name}}': project_name,
+        '{{registration_no}}': registration_no,
+        '{{date}}': date
+    }
+
+    # Helper function to replace with bold for values only
+    def replace_text_with_bold(paragraphs, replacements):
+        for para in paragraphs:
+            full_text = ''.join(run.text for run in para.runs)
+            if not any(ph in full_text for ph in replacements.keys()):
+                continue
+
+            new_runs = [(full_text, False)]
+
+            for placeholder, value in replacements.items():
+                updated_runs = []
+                for text, bold in new_runs:
+                    if placeholder in text:
+                        parts = text.split(placeholder)
+                        for i, part in enumerate(parts):
+                            updated_runs.append((part, bold))
+                            if i < len(parts) - 1:
+                                updated_runs.append((value, True))  # replacement in bold
+                    else:
+                        updated_runs.append((text, bold))
+                new_runs = updated_runs
+
             para.clear()
             for text, bold in new_runs:
-                r = para.add_run(text)
-                r.bold = bold
+                run = para.add_run(text)
+                run.bold = bold
 
-    for para in doc.paragraphs:
-        replace_placeholder_with_bold(para, '{{promoter_name}}', promoter_name)
-        replace_placeholder_with_bold(para, '{{project_name}}', project_name)
-        replace_placeholder_with_bold(para, '{{registration_no}}', registration_no)
-        replace_placeholder_with_bold(para, '{{date}}', date)
+    # Replace in all paragraphs
+    replace_text_with_bold(doc.paragraphs, replacements)
 
+    # Replace in all table cells too
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
-                for para in cell.paragraphs:
-                    replace_placeholder_with_bold(para, '{{promoter_name}}', promoter_name)
-                    replace_placeholder_with_bold(para, '{{project_name}}', project_name)
-                    replace_placeholder_with_bold(para, '{{registration_no}}', registration_no)
-                    replace_placeholder_with_bold(para, '{{date}}', date)
+                replace_text_with_bold(cell.paragraphs, replacements)
 
     sanitized_name = promoter_name.replace(" ", "_")
-    filename = f"{sanitized_name}_NoComplaintsDeclaration.docx"
+    filename = f"{sanitized_name}_noComplaintsDeclaration.docx"
     output_path = os.path.join(output_folder, filename)
     doc.save(output_path)
+
     return output_path
 
 def update_extension_application(date, registration_no, extension_date, promoter_name):
@@ -107,54 +136,63 @@ def update_extension_application(date, registration_no, extension_date, promoter
     import os
 
     # Define template and output folder
-    template_path =  os.path.join('resources','Extension Application under Section 7(3).docx')
-    output_folder = os.path.join('generated','extension')
+    template_path = os.path.join('resources', 'Extension Application under Section 7(3).docx')
+    output_folder = os.path.join('generated', 'extension')
     os.makedirs(output_folder, exist_ok=True)
 
     doc = Document(template_path)
-
-    # Convert date formats
     date = datetime.strptime(date, "%Y-%m-%d").strftime("%d-%m-%Y")
     extension_date = datetime.strptime(extension_date, "%Y-%m-%d").strftime("%d-%m-%Y")
-    def replace_placeholder_with_bold(para, placeholder, value):
-        if placeholder in para.text:
-            new_runs = []
-            for run in para.runs:
-                if placeholder in run.text:
-                    before, after = run.text.split(placeholder)
-                    if before:
-                        new_runs.append((before, run.bold))
-                    new_runs.append((value, True))
-                    if after:
-                        new_runs.append((after, run.bold))
-                else:
-                    new_runs.append((run.text, run.bold))
+
+    # Map of placeholders to replacement values
+    replacements = {
+        '{{promoter_name}}': promoter_name,
+        '{{extension_date}}': extension_date,
+        '{{registration_no}}': registration_no,
+        '{{date}}': date
+    }
+
+    # Helper function to replace with bold for values only
+    def replace_text_with_bold(paragraphs, replacements):
+        for para in paragraphs:
+            full_text = ''.join(run.text for run in para.runs)
+            if not any(ph in full_text for ph in replacements.keys()):
+                continue
+
+            new_runs = [(full_text, False)]
+
+            for placeholder, value in replacements.items():
+                updated_runs = []
+                for text, bold in new_runs:
+                    if placeholder in text:
+                        parts = text.split(placeholder)
+                        for i, part in enumerate(parts):
+                            updated_runs.append((part, bold))
+                            if i < len(parts) - 1:
+                                updated_runs.append((value, True))  # replacement in bold
+                    else:
+                        updated_runs.append((text, bold))
+                new_runs = updated_runs
+
             para.clear()
             for text, bold in new_runs:
-                r = para.add_run(text)
-                r.bold = bold
+                run = para.add_run(text)
+                run.bold = bold
 
-    for para in doc.paragraphs:
-        replace_placeholder_with_bold(para, '{{date}}', date)
-        replace_placeholder_with_bold(para, '{{registration_no}}', registration_no)
-        replace_placeholder_with_bold(para, '{{extension_date}}', extension_date)
-        replace_placeholder_with_bold(para, '{{promoter_name}}', promoter_name)
+    # Replace in all paragraphs
+    replace_text_with_bold(doc.paragraphs, replacements)
 
+    # Replace in all table cells too
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
-                for para in cell.paragraphs:
-                    replace_placeholder_with_bold(para, '{{date}}', date)
-                    replace_placeholder_with_bold(para, '{{registration_no}}', registration_no)
-                    replace_placeholder_with_bold(para, '{{extension_date}}', extension_date)
-                    replace_placeholder_with_bold(para, '{{promoter_name}}', promoter_name)
+                replace_text_with_bold(cell.paragraphs, replacements)
 
-    # Generate output path
     sanitized_name = promoter_name.replace(" ", "_")
-    filename = f"{sanitized_name}_Extension_Application.docx"
+    filename = f"{sanitized_name}_Extension Application.docx"
     output_path = os.path.join(output_folder, filename)
-
     doc.save(output_path)
+
     return output_path
 
 def update_project_pert_file(project_name, registration_no, extension_date, promoter_name):
@@ -163,40 +201,59 @@ def update_project_pert_file(project_name, registration_no, extension_date, prom
     from datetime import datetime
 
     # Template and output folder
-    template_path = os.path.join('resources','projectPert.docx')
-    output_folder = os.path.join('generated','project_pert')
+    template_path = os.path.join('resources', 'projectPert.docx')
+    output_folder = os.path.join('generated', 'project_pert')
     os.makedirs(output_folder, exist_ok=True)
 
     doc = Document(template_path)
-
-    # Format extension_date
     extension_date = datetime.strptime(extension_date, "%Y-%m-%d").strftime("%d-%m-%Y")
 
-    # Helper function to replace placeholders even if broken into runs
-    def replace_text_in_paragraphs(paragraphs):
+    # Map of placeholders to replacement values
+    replacements = {
+        '{{promoter_name}}': promoter_name,
+        '{{extension_date}}': extension_date,
+        '{{registration_no}}': registration_no,
+        '{{project_name}}': project_name
+    }
+
+    # Helper function to replace with bold for values only
+    def replace_text_with_bold(paragraphs, replacements):
         for para in paragraphs:
             full_text = ''.join(run.text for run in para.runs)
-            if any(ph in full_text for ph in ['{{project_name}}', '{{registration_no}}', '{{extension_date}}', '{{promoter_name}}']):
-                full_text = full_text.replace('{{project_name}}', project_name)
-                full_text = full_text.replace('{{registration_no}}', registration_no)
-                full_text = full_text.replace('{{extension_date}}', extension_date)
-                full_text = full_text.replace('{{promoter_name}}', promoter_name)
-                # Clear runs and write new text as one run
-                para.clear()
-                para.add_run(full_text)
+            if not any(ph in full_text for ph in replacements.keys()):
+                continue
+
+            new_runs = [(full_text, False)]
+
+            for placeholder, value in replacements.items():
+                updated_runs = []
+                for text, bold in new_runs:
+                    if placeholder in text:
+                        parts = text.split(placeholder)
+                        for i, part in enumerate(parts):
+                            updated_runs.append((part, bold))
+                            if i < len(parts) - 1:
+                                updated_runs.append((value, True))  # replacement in bold
+                    else:
+                        updated_runs.append((text, bold))
+                new_runs = updated_runs
+
+            para.clear()
+            for text, bold in new_runs:
+                run = para.add_run(text)
+                run.bold = bold
 
     # Replace in all paragraphs
-    replace_text_in_paragraphs(doc.paragraphs)
+    replace_text_with_bold(doc.paragraphs, replacements)
 
     # Replace in all table cells too
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
-                replace_text_in_paragraphs(cell.paragraphs)
+                replace_text_with_bold(cell.paragraphs, replacements)
 
-    # Save file
     sanitized_name = promoter_name.replace(" ", "_")
-    filename = f"{sanitized_name}_ProjectPert.docx"
+    filename = f"{sanitized_name}_projectPert.docx"
     output_path = os.path.join(output_folder, filename)
     doc.save(output_path)
 
